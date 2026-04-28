@@ -1,0 +1,13 @@
+Author: Rohan Tabish
+Organization: University of Illinois at Urbana-Champaign, IL, USA
+
+
+This is a simple FFT benchmark. 
+
+driver.c: This file has main function.
+fft.c: This file has the actual fft function. The #define NUM_POINTS defines number of points that for which we want FFT 
+Makefile: This file is used to compile the code. 
+
+How to run:
+./fft
+

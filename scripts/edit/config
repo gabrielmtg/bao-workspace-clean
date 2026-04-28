@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+VM_INDEX=0 source env.bash
+$EDITOR  $BAO_DEMOS/demos/$DEMO/configs/$PLATFORM.c

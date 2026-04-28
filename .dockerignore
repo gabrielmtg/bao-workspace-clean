@@ -1,0 +1,7 @@
+.git
+data/*.txt
+data/csv_final
+etc/
+**/build/
+**/*.o
+**/*.d

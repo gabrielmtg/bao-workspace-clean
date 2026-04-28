@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+VM_INDEX=NULL source env.bash
+$EDITOR $BAO_CORE/init.c

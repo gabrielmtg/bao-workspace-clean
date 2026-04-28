@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+VM_INDEX=$1 source env.bash
+$EDITOR $BAO_DEMOS_FREERTOS/src/main.c
