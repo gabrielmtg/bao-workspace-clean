@@ -1,34 +1,79 @@
-# IAES: Intelligent (I) Run-Time Monitoring and Actuation Architecture (A) for Embedded (E) Systems (S)
+# Bao Hypervisor — MemGuard + FreeRTOS Research Platform (RPi4)
 
-IAES is a research project designed to bridge the gap between **Real-Time Systems (RTS)** and **Microarchitectural Security**. It provides a lightweight, AI-driven monitoring architecture to detect microarchitectural attacks and cross-core interference in **Mixed-Criticality Systems (MCS)**.
+Security research environment using the **Bao Hypervisor** on **Raspberry Pi 4 (ARMv8)**
+for microarchitectural attack detection via PMU monitoring and bare-metal neural inference.
 
-This project is implemented on the **Raspberry Pi 4 (BCM2711)** using the **Bao Hypervisor** to enforce spatial and temporal isolation between a Linux "best-effort" domain and a FreeRTOS "safety-critical" domain.
+## Architecture
 
-## 🔬 Research Context
-Modern Multi-Processor Systems-on-Chip (MPSoC) share critical hardware resources (Last-Level Cache, System Bus, Branch Predictors). While efficient, these shared resources are vulnerable to:
-- **MicroarchitecturalAttacks** (e.g., Spectre, Meltdown).
-- **Resource Contention/DoS** (e.g., Cache eviction, Memory bandwidth saturation).
+| Core | VM | Role |
+|------|----|------|
+| 0 | VM0 (Baremetal) | PMU Monitor + MLP Detector |
+| 1 | VM1 (FreeRTOS) | Victim — Benchmark suite |
+| 2 | VM2 (FreeRTOS) | Victim — Benchmark suite |
+| 3 | VM3 (Buildroot Linux) | Attacker — Side-channel attacks |
 
-IAES addresses these by using **Hardware Performance Counters (HPCs)** as security sensors and **TinyML** models to classify system behavior in real-time without the need for dedicated AI accelerators.
-
-## 🚀 Key Contributions
-1. **Embedded Microarchitectural Dataset**: A reproducible dataset capturing *Normal* vs. *Interference* execution patterns.
-2. **Attack Porting**: Implementations of representative microarchitectural attacks ported to ARMv8.
-3. **Lightweight AI Detector**: A computationally efficient Multi-Layer Perceptron (MLP) using sliding temporal windows for deterministic anomaly detection.
-4. **Bao-based Architecture**: Integration with the Bao Hypervisor for run-time monitoring on COTS (Commercial Off-The-Shelf) platforms.
-
-## 🛠 Project Structure
-- `/platforms/rpi4`: Configuration files and device trees for the Raspberry Pi 4.
-- `/demos`: Source code for the Mixed-Criticality demos (Linux + FreeRTOS).
-- `/scripts`: Automation for building and deploying the hypervisor image.
-- `.gitignore`: Configured to exclude heavy build artifacts (`wrkdir/`) and binaries.
-
-## 🏗 Build Instructions
-To build the default mixed-criticality demo:
+## Quick Start (Docker — Recommended)
 
 ```bash
-# Initialize submodules (Bao Hypervisor Core)
-git submodule update --init --recursive
+# Full build (first run clones Linux + Buildroot — takes ~30 min)
+./build.sh
 
-# Compile for Raspberry Pi 4
-make PLATFORM=rpi4 DEMO=linux+freertos
+# Build specific components
+./build.sh vm 0          # Build VM0 only
+./build.sh bao           # Build Bao hypervisor only
+./build.sh shell         # Interactive shell in build container
+```
+
+**Prerequisites:** Docker (or Podman). No native toolchains needed.
+
+## Native Build
+
+```bash
+# 1. Install toolchain to etc/arm-gnu-toolchain/ or system PATH
+# 2. Install deps: build-essential, dtc, python3, bc, flex, bison, libssl-dev...
+VM_INDEX=0 source ./env.bash
+make vms    # Build all VMs
+make bao    # Build Bao hypervisor
+make copy   # Copy bao.bin to SD card
+```
+
+## Output
+
+After a successful build:
+```
+bao-demos/wrkdir/imgs/rpi4/linux+freertos/bao.bin
+```
+
+Flash `bao.bin` to the SD card's BOOT partition alongside the RPi4 firmware files.
+
+## Project Structure
+
+```
+├── Dockerfile              # Build environment container
+├── build.sh                # Docker-orchestrated build script
+├── env.bash                # Environment variables (Docker + native)
+├── Makefile                # Top-level build orchestrator
+├── scripts/                # Build and utility scripts
+├── data/
+│   └── process_all.py      # PMU log parser (CSV extraction)
+└── bao-demos/
+    ├── demos/              # Scenario configs + devicetrees
+    ├── guests/             # Linux/FreeRTOS guest configs
+    ├── platforms/           # Platform-specific (RPi4)
+    └── wrkdir/srcs/
+        ├── bao/            # Bao hypervisor (modified: detector.c, pmu.c, regulator.c)
+        ├── VMs/vm_{0..3}/  # VM sources (FreeRTOS + Linux)
+        ├── benchmarks/     # 8 benchmark suite (bandwidth, SHA, FFT, etc.)
+        ├── guest_common/   # Shared code across VMs
+        ├── pmu_monitor/    # PMU monitoring library
+        ├── neural_network/ # MLP inference engine
+        └── fann/           # FANN library
+```
+
+## Data Pipeline
+
+1. Collect PMU samples via UART (minicom/screen → `data/*.txt`)
+2. Parse raw logs: `python3 data/process_all.py`
+3. Train models off-board (Python/scikit-learn)
+4. Port weights to `model_weights.h` in hypervisor
+
