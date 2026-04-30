@@ -55,15 +55,15 @@ void _fini(void) {}
 
 int main(void) {
 
-  // cria fila para comunicação PMU -> FANN
+  // Create queue for PMU -> FANN communication
   xPmuQueue = xQueueCreate(100, sizeof(FANN_sample));
   if (xPmuQueue == NULL) {
-    printf("Erro: fila nao criada\n");
+    printf("Error: queue not created\n");
     while (1)
       ;
   }
 
-  // Cria task orquestradora
+  // Create orchestrator task
   xTaskCreate(task_orchestrator, "taskOrquestradora", TASK_STACK_SIZE, NULL,
               OTHER_TASK_PRIORITY, NULL);
 

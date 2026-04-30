@@ -12,7 +12,7 @@ VM_IMAGE(vm_2_img, XSTR(BAO_DEMOS_WRKDIR_IMGS/vm_2.bin));
 VM_IMAGE(vm_3_img, XSTR(BAO_DEMOS_WRKDIR_IMGS/vm_3.bin));
 #endif
 
-// Cenário ativo: SCENARIO (definido em regulation.h)
+// Active scenario: SCENARIO (defined in regulation.h)
 
 struct config config =
     {
@@ -21,17 +21,17 @@ struct config config =
             .shmemlist_size = ACTIVE_IPC_CHANNELS,
         .shmemlist = (struct shmem[]){
 #if EXEC_VM_1
-            [0] = { .size = 0x00010000 },  // Canal 0: VM0 <-> VM1
+            [0] = { .size = 0x00010000 },  // Channel 0: VM0 <-> VM1
 #endif
 #if EXEC_VM_2 && EXEC_VM_1
-            [1] = { .size = 0x00010000 },  // Canal 1: VM0 <-> VM2
+            [1] = { .size = 0x00010000 },  // Channel 1: VM0 <-> VM2
 #endif
 #if EXEC_VM_3 && EXEC_VM_2 && EXEC_VM_1
-            [2] = { .size = 0x00010000 },  // Canal 2: VM0 <-> VM3 (cenário 6)
+            [2] = { .size = 0x00010000 },  // Channel 2: VM0 <-> VM3 (scenario 6)
 #elif EXEC_VM_3 && EXEC_VM_1
-            [1] = { .size = 0x00010000 },  // Canal 1: VM0 <-> VM3 (cenário 3)
+            [1] = { .size = 0x00010000 },  // Channel 1: VM0 <-> VM3 (scenario 3)
 #elif EXEC_VM_3
-            [0] = { .size = 0x00010000 },  // Canal 0: VM0 <-> VM3 (cenário 2)
+            [0] = { .size = 0x00010000 },  // Channel 0: VM0 <-> VM3 (scenario 2)
 #endif
         },
 
@@ -254,11 +254,11 @@ struct config config =
                                  .ipcs = (struct ipc[]){{.base = 0x70000000,
                                                          .size = 0x00010000,
 #if EXEC_VM_2 && EXEC_VM_1
-                                                         .shmem_id = 2,  // cenário 6: VM3 usa canal 2
+                                                         .shmem_id = 2,  // scenario 6: VM3 uses channel 2
 #elif EXEC_VM_1
-                                                         .shmem_id = 1,  // cenário 3: VM3 usa canal 1
+                                                         .shmem_id = 1,  // scenario 3: VM3 uses channel 1
 #else
-                                                         .shmem_id = 0,  // cenário 2: VM3 usa canal 0
+                                                         .shmem_id = 0,  // scenario 2: VM3 uses channel 0
 #endif
                                                          .interrupt_num = 1,
                                                          .interrupts =

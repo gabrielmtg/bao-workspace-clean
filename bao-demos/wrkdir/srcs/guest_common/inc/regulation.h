@@ -9,7 +9,7 @@
 #define DEBUG 0
 
 // =======================================
-// Beginning do not change
+// Do not change below
 // =======================================
 #define UNUSED_ARG 0
 #define UNUSED_VALUE 4294967295U
@@ -88,25 +88,25 @@
 // #define DIJKSTRA_TASK_NAME "Dijkstra_task"
 // #define SHA_TASK_NAME "SHA_task"
 // =======================================
-// End do not change
+// End of do-not-change section
 // =======================================
 
 #define PERIOD_QNT 10
 
-// ===== SELEÇÃO DE CENÁRIO DE COLETA =====
-// Cenário 1: Apenas benchmarks em 1 core, sequencial (label 0)
-// Cenário 2: Apenas ataques em 1 core (label 1)
-// Cenário 3: Benchmarks + Ataques em 2 cores (bench=label 2, ataque=label 3)
-// Cenário 4: Benchmarks em 2 cores (VM1+VM2), sequencial (label 0)
-// Cenário 5: Benchmarks em 2 cores (VM1+VM2), ALEATÓRIO (label 0)
-// Cenário 6: Benchmarks ALEATÓRIOS (VM1+VM2) + Ataques (VM3)
-// Cenário 7: Benchmarks ALEATÓRIOS (VM1+VM2) + Ataques com BENCHMARKS (VM3)
-//            Ciclo VM3: benchmark_aleatório → Spectre → benchmark_aleatório →
-//            Armageddon → benchmark_aleatório → Meltdown → repete
-// Cenário 8: Benchmarks FIXOS (VM1=SHA, VM2=FFT) + Meltdown persistente (VM3)
-//            Core 1: SHA em loop, Core 2: FFT em loop, Core 3: Meltdown em loop
-// =========================================
-#define SCENARIO 7 // <-- ALTERAR AQUI PARA MUDAR O CENÁRIO
+// ===== DATA COLLECTION SCENARIO SELECTION =====
+// Scenario 1: Benchmarks only on 1 core, sequential (label 0)
+// Scenario 2: Attacks only on 1 core (label 1)
+// Scenario 3: Benchmarks + Attacks on 2 cores (bench=label 2, attack=label 3)
+// Scenario 4: Benchmarks on 2 cores (VM1+VM2), sequential (label 0)
+// Scenario 5: Benchmarks on 2 cores (VM1+VM2), RANDOM (label 0)
+// Scenario 6: RANDOM benchmarks (VM1+VM2) + Attacks (VM3)
+// Scenario 7: RANDOM benchmarks (VM1+VM2) + Attacks with BENCHMARKS (VM3)
+//             VM3 cycle: random_benchmark → Spectre → random_benchmark →
+//             Armageddon → random_benchmark → Meltdown → repeat
+// Scenario 8: FIXED benchmarks (VM1=SHA, VM2=FFT) + persistent Meltdown (VM3)
+//             Core 1: SHA loop, Core 2: FFT loop, Core 3: Meltdown loop
+// ===============================================
+#define SCENARIO 7 // <-- CHANGE HERE TO SWITCH SCENARIO
 
 #if SCENARIO == 1
 // Solo benchmarks: VM0 (monitor) + VM1 (benchmarks)
@@ -116,18 +116,18 @@
 #define EXEC_VM_3 0
 #define SCENARIO_LABEL_BENCH 0
 #define BENCHMARK_RANDOM 0
-#define ACTIVE_IPC_CHANNELS 1 // só VM1
+#define ACTIVE_IPC_CHANNELS 1 // VM1 only
 #elif SCENARIO == 2
-// Solo ataques: VM0 (monitor) + VM3 (ataques Linux)
+// Solo attacks: VM0 (monitor) + VM3 (Linux attacks)
 #define EXEC_VM_0 1
 #define EXEC_VM_1 0
 #define EXEC_VM_2 0
 #define EXEC_VM_3 1
 #define SCENARIO_LABEL_ATTACK 1
 #define BENCHMARK_RANDOM 0
-#define ACTIVE_IPC_CHANNELS 1 // só VM3
+#define ACTIVE_IPC_CHANNELS 1 // VM3 only
 #elif SCENARIO == 3
-// Benchmarks + ataques: VM0 + VM1 + VM3
+// Benchmarks + attacks: VM0 + VM1 + VM3
 #define EXEC_VM_0 1
 #define EXEC_VM_1 1
 #define EXEC_VM_2 0
@@ -137,7 +137,7 @@
 #define BENCHMARK_RANDOM 0
 #define ACTIVE_IPC_CHANNELS 2 // VM1 + VM3
 #elif SCENARIO == 4
-// Benchmarks em 2 cores: VM0 (monitor) + VM1 (bench) + VM2 (bench)
+// Benchmarks on 2 cores: VM0 (monitor) + VM1 (bench) + VM2 (bench)
 #define EXEC_VM_0 1
 #define EXEC_VM_1 1
 #define EXEC_VM_2 1
@@ -146,8 +146,8 @@
 #define BENCHMARK_RANDOM 0
 #define ACTIVE_IPC_CHANNELS 2 // VM1 + VM2
 #elif SCENARIO == 5
-// Benchmarks ALEATÓRIOS em 2 cores: VM0 (monitor) + VM1 + VM2 (benchmarks
-// aleatórios)
+// RANDOM benchmarks on 2 cores: VM0 (monitor) + VM1 + VM2 (random
+// benchmarks)
 #define EXEC_VM_0 1
 #define EXEC_VM_1 1
 #define EXEC_VM_2 1
@@ -156,7 +156,7 @@
 #define BENCHMARK_RANDOM 1
 #define ACTIVE_IPC_CHANNELS 2 // VM1 + VM2
 #elif SCENARIO == 6
-// Benchmarks ALEATÓRIOS (VM1+VM2) + Ataques (VM3)
+// RANDOM benchmarks (VM1+VM2) + Attacks (VM3)
 #define EXEC_VM_0 1
 #define EXEC_VM_1 1
 #define EXEC_VM_2 1
@@ -166,9 +166,9 @@
 #define BENCHMARK_RANDOM 1
 #define ACTIVE_IPC_CHANNELS 3 // VM1 + VM2 + VM3
 #elif SCENARIO == 7
-// Benchmarks ALEATÓRIOS (VM1+VM2) + Ataques com benchmarks aleatórios no VM3
-// Ciclo VM3: benchmark_aleatório → Spectre → benchmark_aleatório → Armageddon →
-// benchmark_aleatório → Meltdown → repete
+// RANDOM benchmarks (VM1+VM2) + Attacks with random benchmarks on VM3
+// VM3 cycle: random_benchmark → Spectre → random_benchmark → Armageddon →
+// random_benchmark → Meltdown → repeat
 #define EXEC_VM_0 1
 #define EXEC_VM_1 1
 #define EXEC_VM_2 1
@@ -178,7 +178,7 @@
 #define BENCHMARK_RANDOM 1
 #define ACTIVE_IPC_CHANNELS 3 // VM1 + VM2 + VM3
 #elif SCENARIO == 8
-// Benchmarks FIXOS (VM1=SHA, VM2=FFT) + Meltdown persistente (VM3)
+// FIXED benchmarks (VM1=SHA, VM2=FFT) + persistent Meltdown (VM3)
 #define EXEC_VM_0 1
 #define EXEC_VM_1 1
 #define EXEC_VM_2 1
@@ -192,7 +192,7 @@
 #error "SCENARIO deve ser 1, 2, 3, 4, 5, 6, 7 ou 8"
 #endif
 
-// Default BENCHMARK_FIXED para cenários que não o definem
+// Default BENCHMARK_FIXED for scenarios that don't define it
 #ifndef BENCHMARK_FIXED
 #define BENCHMARK_FIXED 0
 #endif
@@ -231,7 +231,7 @@
 #define CACHE_COLORING 1
 
 // =======================================
-// Beginning do not change
+// Do not change below
 // =======================================
 #define INCREMENT_IF_EXEC_VM_0 (EXEC_VM_0 ? 1 : 0)
 #define INCREMENT_IF_EXEC_VM_1 (EXEC_VM_1 ? 1 : 0)
@@ -289,7 +289,7 @@ extern struct VM vm_conf[VM_QNT];
 // extern TASK task_conf[TASK_QNT];
 
 // =======================================
-// End do not change
+// End of do-not-change section
 // =======================================
 
 #endif

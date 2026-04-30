@@ -5,11 +5,12 @@
 # Builds the entire project inside a Docker container for full portability.
 #
 # Usage:
-#   ./build.sh              # Full build (all VMs + Bao hypervisor)
+#   ./build.sh              # Full build + copy to SD card
 #   ./build.sh vms          # Build only VMs (vm_0 through vm_3)
 #   ./build.sh vm 0         # Build only vm_0
 #   ./build.sh vm 3         # Build only vm_3 (Linux — slow first time)
 #   ./build.sh bao          # Build only the Bao hypervisor
+#   ./build.sh copy         # Copy bao.bin to SD card (no build)
 #   ./build.sh clean        # Clean all build artifacts
 #   ./build.sh shell        # Open interactive shell inside the container
 #
@@ -82,6 +83,38 @@ build_all() {
     build_bao
 }
 
+copy_to_sdcard() {
+    local bao_bin="${SCRIPT_DIR}/bao-demos/wrkdir/imgs/rpi4/linux+freertos/bao.bin"
+    local real_user="${SUDO_USER:-$USER}"
+    local sdcard="/media/${real_user}/BOOT/"
+
+    # Allow override via environment variable
+    sdcard="${BAO_DEMOS_SDCARD:-$sdcard}"
+
+    info "Copying bao.bin to SD card at '${sdcard}'..."
+
+    if [[ ! -f "$bao_bin" ]]; then
+        error "bao.bin not found at '$bao_bin'. Build first with: ./build.sh"
+        exit 1
+    fi
+
+    if [[ ! -d "$sdcard" ]]; then
+        error "SD card not found at '$sdcard'"
+        error "Make sure the SD card is mounted."
+        error "Or set BAO_DEMOS_SDCARD: BAO_DEMOS_SDCARD=/path/to/mount ./build.sh copy"
+        exit 1
+    fi
+
+    cp -v "$bao_bin" "$sdcard"
+    sync
+    ok "bao.bin copied to '$sdcard'. Safe to eject!"
+}
+
+deploy() {
+    build_all
+    copy_to_sdcard
+}
+
 do_clean() {
     info "Cleaning all build artifacts..."
     run_in_container "source env.bash && ./scripts/util/clean.sh" || true
@@ -104,10 +137,11 @@ usage() {
     echo "Usage: $0 [command] [args]"
     echo ""
     echo "Commands:"
-    echo "  (none)         Full build: all VMs + Bao hypervisor"
+    echo "  (none)         Full build (Docker) + copy to SD card"
     echo "  vms            Build all VMs (0-3)"
     echo "  vm <N>         Build a specific VM (0-3)"
     echo "  bao            Build only the Bao hypervisor"
+    echo "  copy           Copy bao.bin to SD card (skip build)"
     echo "  clean          Clean all build artifacts"
     echo "  shell          Open interactive shell in the container"
     echo "  help           Show this help message"
@@ -115,9 +149,16 @@ usage() {
 
 main() {
     local cmd="${1:-all}"
+
+    # 'copy' runs on the host — no Docker needed
+    if [[ "$cmd" == "copy" ]]; then
+        copy_to_sdcard
+        return
+    fi
+
     ensure_image
     case "$cmd" in
-        all)   build_all ;;
+        all)   deploy ;;
         vms)   build_all_vms ;;
         vm)    build_vm "${2:?ERROR: VM index required (0-3)}" ;;
         bao)   build_bao ;;

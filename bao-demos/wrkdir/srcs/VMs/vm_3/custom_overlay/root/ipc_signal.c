@@ -9,7 +9,7 @@
 #define IPC_BASE_ADDR 0x70000000
 #define IPC_SIZE      0x10000
 
-// Layout da IPC_Channel:
+// IPC_Channel layout:
 // offset 0: signal_ready
 // offset 4: resume
 // offset 8: current_label

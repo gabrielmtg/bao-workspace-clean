@@ -17,12 +17,12 @@ static inline uint64_t get_hardware_timer_freq(void) {
 uint8_t zombie_noise_buffer[FILL_BUFFER_SIZE];
 uint8_t array[256 * 512];
 
-// simula a carga nos buffers de preenchimento
+// Simulates load on the fill buffers
 void generate_mds_traffic() {
   for (int i = 0; i < 100; i++) {
     int idx = rand() % FILL_BUFFER_SIZE;
     zombie_noise_buffer[idx] += 1;
-    // força a escrita e invalidaçao para gerar trafego de barramento
+    // Force write and invalidation to generate bus traffic
     asm volatile("dc civac, %0" : : "r"(&zombie_noise_buffer[idx]) : "memory");
   }
   asm volatile("dsb sy");
@@ -33,11 +33,11 @@ void execute_zombieload_attack(uint8_t secret_val, int cache_hit_threshold,
   uint64_t start_time = get_hardware_timer_count();
   uint64_t timer_freq = get_hardware_timer_freq();
 
-  // Calcula quantos ciclos de hardware equivalem aos milissegundos desejados
+  // Calculate how many hardware ticks correspond to the desired milliseconds
   uint64_t duration_hardware_ticks = (timer_freq / 1000) * duration_ms;
   uint64_t end_time = start_time + duration_hardware_ticks;
 
-  // Loop usa o relógio do hardware nativo
+  // Loop uses native hardware clock
   while (get_hardware_timer_count() < end_time) {
 
     generate_mds_traffic();
@@ -47,7 +47,7 @@ void execute_zombieload_attack(uint8_t secret_val, int cache_hit_threshold,
     }
     asm volatile("dsb sy \n isb");
 
-    // acesso especulativo simulado
+    // Simulated speculative access
     volatile uint8_t dummy = array[secret_val * 512];
     (void)dummy;
 
@@ -56,12 +56,12 @@ void execute_zombieload_attack(uint8_t secret_val, int cache_hit_threshold,
     volatile uint8_t *addr;
 
     for (int i = 0; i < 256; i++) {
-      // multiplicacao por numero primo (167) ajuda a embaralhar o acesso e
-      // evitar prefetcher de hardware
+      // Multiplication by prime number (167) helps shuffle the access and
+      // avoid hardware prefetcher
       mix_i = ((i * 167) + 13) & 255;
       addr = &array[mix_i * 512];
 
-      // mede o tempo de leitura usando o timer
+      // Measure read time using the timer
       asm volatile("isb \n mrs %0, cntvct_el0" : "=r"(start));
       volatile uint8_t junk = *addr;
       (void)junk;

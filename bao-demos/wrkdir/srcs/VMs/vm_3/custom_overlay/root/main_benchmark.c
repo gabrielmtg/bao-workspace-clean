@@ -14,11 +14,11 @@
 #include <unistd.h>
 #include <stdint.h>
 
-/* Includes dos benchmarks — os -I flags são fornecidos pelo Makefile */
+/* Benchmark includes — the -I flags are provided by the Makefile */
 #include "bandwidth.h"
 #include "benchmarks_wrappers.h"
 
-/* g_bw_memory e qsort_input_data são definidos em benchmarks_wrappers.c */
+/* g_bw_memory and qsort_input_data are defined in benchmarks_wrappers.c */
 extern int g_bw_memory[];
 
 static void init_qsort_data(void) {
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
 
-        /* Pequena pausa para não saturar completamente a CPU */
+        /* Short pause to avoid completely saturating the CPU */
         usleep(1000);  /* 1ms */
     }
 

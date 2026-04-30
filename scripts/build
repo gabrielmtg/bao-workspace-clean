@@ -1,1 +1,0 @@
-./scripts/util/build_vm.sh all && ./scripts/util/build_bao.sh && ./scripts/util/copy_files.sh

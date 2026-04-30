@@ -30,7 +30,7 @@ echo "⚙️  Copying '$SOURCE_FILE' to '$DESTINATION_DIR'..."
 cp -v "$SOURCE_FILE" "$DESTINATION_DIR"
 
 # 4. Flush file system buffers to the SD card to prevent corruption.
-echo "🔄 Sincronizando dados com o Cartão SD..."
+echo "🔄 Syncing data with the SD card..."
 sync
 
 # 5. If the script reaches this point, the copy was successful.

@@ -2,7 +2,7 @@
 #include "../../VMs/vm_0/src/tasks/inc/globals.h"
 #include <stdio.h>
 
-// Inclui regulation.h para ter acesso a SCENARIO, EXEC_VM_x, labels
+// Include regulation.h for access to SCENARIO, EXEC_VM_x, labels
 #include "regulation.h"
 
 #define MAX_SAMPLES 512
@@ -11,33 +11,33 @@ static FANN_sample pmu_history[MAX_SAMPLES];
 static uint32_t current_sample_index = 0;
 
 //==============================================================================
-// IPC — canais isolados (VM0 acessa os ativos conforme o cenário)
+// IPC — isolated channels (VM0 accesses active ones per scenario)
 //==============================================================================
-#define IPC_VM1_ADDR 0x70000000   // Canal 0: VM0 <-> VM1
-#define IPC_VM2_ADDR 0x70020000   // Canal 1: VM0 <-> VM2
+#define IPC_VM1_ADDR 0x70000000   // Channel 0: VM0 <-> VM1
+#define IPC_VM2_ADDR 0x70020000   // Channel 1: VM0 <-> VM2
 #if EXEC_VM_2 && EXEC_VM_3
-#define IPC_VM3_ADDR 0x70040000   // Canal 2: VM0 <-> VM3 (cenário 6: canal separado)
+#define IPC_VM3_ADDR 0x70040000   // Channel 2: VM0 <-> VM3 (scenario 6: separate channel)
 #else
-#define IPC_VM3_ADDR 0x70020000   // Canal 1: VM0 <-> VM3 (cenário 3: sem VM2)
+#define IPC_VM3_ADDR 0x70020000   // Channel 1: VM0 <-> VM3 (scenario 3: no VM2)
 #endif
 
 typedef struct {
-    volatile uint32_t signal_ready;   // VMx -> VM0: "pause feito"
-    volatile uint32_t resume;         // VM0 -> VMx: "pode continuar"
-    volatile uint32_t current_label;  // VMx -> VM0: label do ataque/benchmark
+    volatile uint32_t signal_ready;   // VMx -> VM0: "pause done"
+    volatile uint32_t resume;         // VM0 -> VMx: "may continue"
+    volatile uint32_t current_label;  // VMx -> VM0: attack/benchmark label
 } IPC_Channel;
 
-// Labels armazenados localmente pela VM0
-// Labels são definidos em tempo de compilação por SCENARIO_LABEL_BENCH / SCENARIO_LABEL_ATTACK
-// (ver regulation.h)
+// Labels stored locally by VM0
+// Labels are defined at compile time by SCENARIO_LABEL_BENCH / SCENARIO_LABEL_ATTACK
+// (see regulation.h)
 
-// Helpers de cache para manter coerência com o Linux que usa Uncached Memory
+// Cache helpers to maintain coherency with Linux which uses Uncached Memory
 static inline void cache_clean_invalidate(volatile void* addr) {
     asm volatile("dc civac, %0" : : "r" (addr) : "memory");
     asm volatile("dsb sy" ::: "memory");
 }
 
-// Inicializa as regiões IPC com zeros (chamada uma vez na startup)
+// Initialize IPC regions with zeros (called once at startup)
 void ipc_init_channels(void) {
 #if EXEC_VM_1
     IPC_Channel* ch_vm1 = (IPC_Channel*) IPC_VM1_ADDR;
@@ -69,13 +69,13 @@ void dump_history_to_serial(void) {
         return;
     }
 
-    // Ler frequencia do timer para converter ticks em tempo
+    // Read timer frequency to convert ticks to time
     uint64_t timer_freq;
     asm volatile("mrs %0, cntfrq_el0" : "=r"(timer_freq));
 
-    // BUILD_EPOCH é injetado pelo Makefile via -DBUILD_EPOCH=$(date +%s)
-    // Representa o Unix timestamp do momento da compilação
-    // Usamos como offset para calcular o horário real
+    // BUILD_EPOCH is injected by the Makefile via -DBUILD_EPOCH=$(date +%s)
+    // Represents the Unix timestamp of the compilation moment
+    // Used as offset to calculate the real time
     #ifndef BUILD_EPOCH
     #define BUILD_EPOCH 0
     #endif
@@ -86,17 +86,17 @@ void dump_history_to_serial(void) {
     printf("CORE_ID,TIMESTAMP,CPU_CYCLES,INSTRUCTIONS,CACHE_MISSES,BRANCH_MISSES,L2_CACHE_ACCESS,LABEL,DET_STATUS,DET_PROB,BENCH_ID\n");
 
     for (uint32_t i = 0; i < current_sample_index; i++) {
-        // Converter timestamp (ticks) para tempo real
+        // Convert timestamp (ticks) to real time
         uint64_t ticks = pmu_history[i].data.timestamp;
         uint64_t elapsed_ms = (ticks * 1000) / timer_freq;
         uint64_t elapsed_secs = elapsed_ms / 1000;
         uint32_t ms = (uint32_t)(elapsed_ms % 1000);
 
-        // Somar tempo de boot ao epoch da compilação para obter horário real
+        // Add boot time to compilation epoch to get real time
         uint64_t total_secs = build_epoch_secs + elapsed_secs;
 
-        // Extrair HH:MM:SS do horário do dia (mod 24h)
-        // Ajuste de fuso horário: -3h para BRT (Brasília)
+        // Extract HH:MM:SS from time of day (mod 24h)
+        // Timezone adjustment: -3h for BRT (Brasília)
         uint64_t day_secs = (total_secs - 3 * 3600) % 86400;
         uint32_t hh = (uint32_t)(day_secs / 3600);
         uint32_t mm = (uint32_t)((day_secs % 3600) / 60);
@@ -179,7 +179,7 @@ void collect_and_process_pmu_sample(uint64_t timer_freq) {
     IPC_Channel* ch_vm3 = (IPC_Channel*) IPC_VM3_ADDR;
 #endif
 
-    // Forçar a leitura descarregando/invalidando a linha de cache
+    // Force read by flushing/invalidating the cache line
 #if EXEC_VM_1
     cache_clean_invalidate((void*)ch_vm1);
 #endif
@@ -190,10 +190,10 @@ void collect_and_process_pmu_sample(uint64_t timer_freq) {
     cache_clean_invalidate((void*)ch_vm3);
 #endif
 
-    // Labels dos cenários são definidos em tempo de compilação
-    // (SCENARIO_LABEL_BENCH / SCENARIO_LABEL_ATTACK em regulation.h)
+    // Scenario labels are defined at compile time
+    // (SCENARIO_LABEL_BENCH / SCENARIO_LABEL_ATTACK in regulation.h)
 
-    // Verificar barreira: TODAS as VMs ativas sinalizaram?
+    // Check barrier: ALL active VMs have signaled?
     int all_ready = 1;
 #if EXEC_VM_1
     if (ch_vm1->signal_ready != 1) all_ready = 0;
@@ -206,10 +206,10 @@ void collect_and_process_pmu_sample(uint64_t timer_freq) {
 #endif
 
     if (all_ready) {
-        // Fazer print dos dados coletados
+        // Print the collected data
         dump_history_to_serial();
 
-        // Resetar sinais e sinalizar resume para VMs ativas
+        // Reset signals and signal resume for active VMs
 #if EXEC_VM_1
         ch_vm1->signal_ready = 0;
         ch_vm1->resume = 1;
@@ -229,21 +229,21 @@ void collect_and_process_pmu_sample(uint64_t timer_freq) {
         return;
     }
 
-    // Coleta normal de PMU — armazenar em historico
-    // Apenas coleta dos cores que têm VMs ativas
+    // Normal PMU collection — store in history
+    // Only collect from cores that have active VMs
     if (current_sample_index < MAX_SAMPLES) {
-        // Timestamp único para todos os cores nesta rodada de coleta
-        // Lido do cntvct_el0 do VM0 (timer global compartilhado por todos os cores)
+        // Single timestamp for all cores in this collection round
+        // Read from VM0's cntvct_el0 (global timer shared by all cores)
         uint64_t collection_timestamp;
         asm volatile("isb \n mrs %0, cntvct_el0" : "=r"(collection_timestamp));
 
-        // Mapeamento core físico → VM (conforme cpu_affinity no rpi4.c):
-        //   Core 0 físico = VM0 (cpu_affinity=0b1)   → monitor (não coleta)
-        //   Core 1 físico = VM1 (cpu_affinity=0b10)  → benchmarks
-        //   Core 3 físico = VM3 (cpu_affinity=0b1000) → Linux (ataques)
-        // ── Label dinâmico (cenário 7) ──
-        // Quando VM3 está rodando benchmarks (current_label 1-7), todas as VMs recebem label=0
-        // Quando VM3 está atacando (current_label>=10), VM1/VM2=SCENARIO_LABEL_BENCH, VM3=SCENARIO_LABEL_ATTACK
+        // Physical core → VM mapping (per cpu_affinity in rpi4.c):
+        //   Physical core 0 = VM0 (cpu_affinity=0b1)   → monitor (no collection)
+        //   Physical core 1 = VM1 (cpu_affinity=0b10)  → benchmarks
+        //   Physical core 3 = VM3 (cpu_affinity=0b1000) → Linux (attacks)
+        // ── Dynamic label (scenario 7) ──
+        // When VM3 is running benchmarks (current_label 1-7), all VMs get label=0
+        // When VM3 is attacking (current_label>=10), VM1/VM2=SCENARIO_LABEL_BENCH, VM3=SCENARIO_LABEL_ATTACK
 #if EXEC_VM_3
         IPC_Channel* ch_vm3_label = (IPC_Channel*) IPC_VM3_ADDR;
         cache_clean_invalidate((void*)ch_vm3_label);
@@ -256,13 +256,13 @@ void collect_and_process_pmu_sample(uint64_t timer_freq) {
 #endif
 
 #if EXEC_VM_1
-        // Coleta core 1 (VM1 = benchmarks)
+        // Collect core 1 (VM1 = benchmarks)
         if (current_sample_index < MAX_SAMPLES) {
             FANN_sample sample;
             sample.core_id = 1;
             bao_get_pmu_data(1, &sample.data);
-            sample.data.timestamp = collection_timestamp;  // timestamp sincronizado
-            sample.label = label_bench;  // label dinâmico baseado no estado da VM3
+            sample.data.timestamp = collection_timestamp;  // synchronized timestamp
+            sample.label = label_bench;  // dynamic label based on VM3 state
             sample.bench_id = ch_vm1->current_label;  // benchmark ID via IPC
             sample.output = g_label_atual;
             pmu_history[current_sample_index] = sample;
@@ -272,13 +272,13 @@ void collect_and_process_pmu_sample(uint64_t timer_freq) {
 #endif
 
 #if EXEC_VM_2
-        // Coleta core 2 (VM2 = benchmarks)
+        // Collect core 2 (VM2 = benchmarks)
         if (current_sample_index < MAX_SAMPLES) {
             FANN_sample sample;
             sample.core_id = 2;
             bao_get_pmu_data(2, &sample.data);
-            sample.data.timestamp = collection_timestamp;  // timestamp sincronizado
-            sample.label = label_bench;  // label dinâmico baseado no estado da VM3
+            sample.data.timestamp = collection_timestamp;  // synchronized timestamp
+            sample.label = label_bench;  // dynamic label based on VM3 state
             sample.bench_id = ch_vm2->current_label;  // benchmark ID via IPC
             sample.output = g_label_atual;
             pmu_history[current_sample_index] = sample;
@@ -288,14 +288,14 @@ void collect_and_process_pmu_sample(uint64_t timer_freq) {
 #endif
 
 #if EXEC_VM_3
-        // Coleta core 3 (VM3 = ataques Linux)
+        // Collect core 3 (VM3 = Linux attacks)
         if (current_sample_index < MAX_SAMPLES) {
             FANN_sample sample;
             sample.core_id = 3;
             bao_get_pmu_data(3, &sample.data);
-            sample.data.timestamp = collection_timestamp;  // timestamp sincronizado
-            sample.label = label_attack;  // 0 quando benchmark, 3 quando atacando
-            sample.bench_id = vm3_current;  // 1-7=benchmark, 10/11/12=ataque
+            sample.data.timestamp = collection_timestamp;  // synchronized timestamp
+            sample.label = label_attack;  // 0 when benchmark, 3 when attacking
+            sample.bench_id = vm3_current;  // 1-7=benchmark, 10/11/12=attack
             sample.output = g_label_atual;
             pmu_history[current_sample_index] = sample;
             current_sample_index++;

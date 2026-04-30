@@ -19,13 +19,13 @@ typedef struct _QITEM {
     struct _QITEM *qNext;
 } QITEM;
 
-/* variáveis globais */
+/* global variables */
 extern int g_qCount;
 extern QITEM *qHead;
 extern NODE rgnNodes[NUM_NODES];
 extern int AdjMatrix[NUM_NODES][NUM_NODES];
 
-/* funções */
+/* functions */
 void print_path(NODE *rgnNodes, int chNode);
 void enqueue(int iNode, int iDist, int iPrev);
 void dequeue(int *piNode, int *piDist, int *piPrev);

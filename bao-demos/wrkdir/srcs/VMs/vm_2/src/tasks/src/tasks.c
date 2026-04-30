@@ -34,16 +34,16 @@ void task_orchestrator(void *arg) {
 
   bw_ctx.mem_ptr = (int *)pvPortMalloc(1024 * 1024);
   if (bw_ctx.mem_ptr == NULL) {
-    printf("[VM2][ERRO] Sem memoria Heap para o Bandwidth!\n");
+    printf("[VM2][ERROR] Not enough heap memory for Bandwidth!\n");
     vTaskDelete(NULL);
   }
   bw_ctx.sum = 0;
 
 #if BENCHMARK_FIXED
   // ============================================================
-  // Cenário 8: FIXO — VM2 roda FFT em loop infinito
+  // Scenario 8: FIXED — VM2 runs FFT in infinite loop
   // ============================================================
-  printf("[VM2] Task Orquestradora (FIXO: FFT) iniciada. Canal IPC: 0x%x\n", IPC_BASE_ADDR);
+  printf("[VM2] Orchestrator Task (FIXED: FFT) started. IPC channel: 0x%x\n", IPC_BASE_ADDR);
   fflush(stdout);
 
   g_label_atual = (float)LABEL_FFT;
@@ -75,7 +75,7 @@ void task_orchestrator(void *arg) {
 #elif BENCHMARK_RANDOM
   prng_seed_from_timer();
 
-  printf("[VM2] Task Orquestradora (ALEATORIO) iniciada. Canal IPC: 0x%x\n",
+  printf("[VM2] Orchestrator Task (RANDOM) started. IPC channel: 0x%x\n",
          IPC_BASE_ADDR);
   fflush(stdout);
 
@@ -133,7 +133,7 @@ void task_orchestrator(void *arg) {
   // VM2 runs benchmarks in REVERSE order: Sorting (7) -> Bandwidth (1)
   int current_bench = LABEL_SORTING;
 
-  printf("[VM2] Task Orquestradora iniciada. Canal IPC: 0x%x\n", IPC_BASE_ADDR);
+  printf("[VM2] Orchestrator Task started. IPC channel: 0x%x\n", IPC_BASE_ADDR);
   fflush(stdout);
 
   while (1) {
@@ -144,7 +144,7 @@ void task_orchestrator(void *arg) {
     g_label_atual = (float)current_bench;
     ipc->current_label = current_bench;
     asm volatile("dsb sy" ::: "memory");
-    printf("[VM2] Rodando benchmark %d (ordem inversa) por 10 minutos...\n", current_bench);
+    printf("[VM2] Running benchmark %d (reverse order) for 10 minutes...\n", current_bench);
     fflush(stdout);
 
     while (xTaskGetTickCount() < end_time) {

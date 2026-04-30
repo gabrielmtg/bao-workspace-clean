@@ -7,7 +7,7 @@ extern uint8_t shared_probe_data[4096];
 extern volatile uint8_t *target_addr;
 
 __attribute__((always_inline)) static inline void arm_flush(void *addr) {
-    // Alterado de civac para cvac para compatibilidade no espaço de usuário do Linux
+    // Changed from civac to cvac for Linux userspace compatibility
     asm volatile("dc cvac, %0" : : "r"(addr) : "memory");
     asm volatile("dsb sy \n isb"); 
 }

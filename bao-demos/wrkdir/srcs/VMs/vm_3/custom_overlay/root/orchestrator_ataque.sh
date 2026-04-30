@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Lista dos ataques que compilamos
+# List of attacks we compiled
 ATAQUES="spectre armageddon meltdown"
 
 
@@ -11,18 +11,18 @@ while true; do
         /root/$ATAQUE &
         PID_ATAQUE=$!
 
-        # Aguarda 15 segundos de execucao do ataque
+        # Wait 15 seconds for the attack to run
         sleep 15
 
         kill -9 $PID_ATAQUE
         
-        # Aguarda 2 segundos antes de pedir o dump
+        # Wait 2 seconds before requesting the dump
         sleep 2
 
-        # Avisa o FreeRTOS para printar os dados coletados
+        # Signal FreeRTOS to print the collected data
         /root/trigger_print
 
-        # Pausa de 5 segundos para o FreeRTOS transferir os dados via serial
+        # 5 second pause for FreeRTOS to transfer data via serial
         sleep 5
         
     done

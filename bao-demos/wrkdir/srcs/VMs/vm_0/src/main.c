@@ -55,13 +55,13 @@ void _fini(void) {}
 
 int main(void) {
 
-  //cria fila para comunicação PMU -> FANN
+  // Create queue for PMU -> FANN communication
   xPmuQueue = xQueueCreate(100, sizeof(FANN_sample));
   if(xPmuQueue == NULL) {
-      printf("Erro: fila nao criada\n");
+      printf("Error: queue not created\n");
       while(1);
   }
-  printf("Fila criada com sucesso\n");
+  printf("Queue created successfully\n");
   xTaskCreate(
     task_monitor,
     "taskMonitor",

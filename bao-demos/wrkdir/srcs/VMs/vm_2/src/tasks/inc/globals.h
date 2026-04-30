@@ -10,7 +10,7 @@
 #define OTHER_TASK_PRIORITY 1
 #define TASK_STACK_SIZE 4096
 
-// IPC shared memory (Canal 2: VM0 <-> VM2)
+// IPC shared memory (Channel 2: VM0 <-> VM2)
 #define IPC_BASE_ADDR 0x70000000
 
 typedef struct {
@@ -31,7 +31,7 @@ typedef struct {
 
 #define NUM_BENCHMARKS   7
 
-// PRNG simples (Linear Congruential Generator) para selecao aleatoria de benchmarks
+// Simple PRNG (Linear Congruential Generator) for random benchmark selection
 static uint32_t _prng_state = 0;
 
 static inline void prng_seed_from_timer(void) {

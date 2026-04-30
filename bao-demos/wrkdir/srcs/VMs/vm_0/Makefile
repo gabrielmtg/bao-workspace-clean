@@ -27,7 +27,7 @@ C_SRC+=$(wildcard $(freertos_dir)/*.c)
 freertos_memmng_dir:=$(freertos_dir)/portable/MemMang
 C_SRC+=$(freertos_memmng_dir)/heap_4.c
 
-# Freertos port arch-specific (Aqui o compilador descobre o portmacro.h do RPi4)
+# Freertos port arch-specific (here the compiler discovers the RPi4 portmacro.h)
 arch_dir=$(ROOT_DIR)/src/arch/$(ARCH)
 SRC_DIRS+=$(arch_dir)
 INC_DIRS+=$(arch_dir)/inc

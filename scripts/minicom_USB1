@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+echo -n "fatload mmc 0 0x200000 bao.bin; go 0x200000" | xclip -selection clipboard
+sudo minicom -D /dev/ttyUSB1 -C data/data_USB1.txt

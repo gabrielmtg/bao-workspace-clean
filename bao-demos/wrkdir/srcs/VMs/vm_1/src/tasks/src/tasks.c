@@ -14,7 +14,7 @@ static bandwidth_context_fann_t bw_ctx;
 
 void run_bandwidth(void) {
   bandwidth_wrapper_fann(&bw_ctx);
-  // evita otimizacao do compilador
+  // Prevent compiler optimization
   asm volatile("" : : "r"(bw_ctx.sum) : "memory");
 }
 
@@ -35,16 +35,16 @@ void task_orchestrator(void *arg) {
 
   bw_ctx.mem_ptr = (int *)pvPortMalloc(1024 * 1024);
   if (bw_ctx.mem_ptr == NULL) {
-    printf("[VM1][ERRO] Sem memoria Heap para o Bandwidth!\n");
+    printf("[VM1][ERROR] Not enough heap memory for Bandwidth!\n");
     vTaskDelete(NULL);
   }
   bw_ctx.sum = 0;
 
 #if BENCHMARK_FIXED
   // ============================================================
-  // Cenário 8: FIXO — VM1 roda SHA em loop infinito
+  // Scenario 8: FIXED — VM1 runs SHA in infinite loop
   // ============================================================
-  printf("[VM1] Task Orquestradora (FIXO: SHA) iniciada. Canal IPC: 0x%x\n", IPC_BASE_ADDR);
+  printf("[VM1] Orchestrator Task (FIXED: SHA) started. IPC channel: 0x%x\n", IPC_BASE_ADDR);
   fflush(stdout);
 
   g_label_atual = (float)LABEL_SHA;
@@ -76,22 +76,22 @@ void task_orchestrator(void *arg) {
 #elif BENCHMARK_RANDOM
   prng_seed_from_timer();
 
-  printf("[VM1] Task Orquestradora (ALEATORIO) iniciada. Canal IPC: 0x%x\n",
+  printf("[VM1] Orchestrator Task (RANDOM) started. IPC channel: 0x%x\n",
          IPC_BASE_ADDR);
   fflush(stdout);
 
   TickType_t next_sync = xTaskGetTickCount() + pdMS_TO_TICKS(SYNC_INTERVAL_MS);
 
   while (1) {
-    // Escolhe um benchmark aleatório a cada iteração
+    // Choose a random benchmark each iteration
     int bench = (int)prng_range(LABEL_BANDWIDTH, NUM_BENCHMARKS);
 
-    // Atualiza IPC para VM0 saber qual benchmark está rodando
+    // Update IPC so VM0 knows which benchmark is running
     g_label_atual = (float)bench;
     ipc->current_label = bench;
     asm volatile("dsb sy" ::: "memory");
 
-    // Executa UMA chamada do wrapper escolhido
+    // Execute ONE call of the chosen wrapper
     switch (bench) {
     case LABEL_BANDWIDTH:
       run_bandwidth();
@@ -116,7 +116,7 @@ void task_orchestrator(void *arg) {
       break;
     }
 
-    // Sync com VM0 periodicamente (mesma lógica dos outros cenários)
+    // Sync with VM0 periodically (same logic as other scenarios)
     if (xTaskGetTickCount() >= next_sync) {
       ipc->current_label = bench;
       asm volatile("dsb sy" ::: "memory");
@@ -136,11 +136,11 @@ void task_orchestrator(void *arg) {
 
 #else
   // ============================================================
-  // Cenário SEQUENCIAL: cada benchmark roda por 10 min em ordem
+  // SEQUENTIAL scenario: each benchmark runs for 10 min in order
   // ============================================================
   int current_bench = LABEL_BANDWIDTH;
 
-  printf("[VM1] Task Orquestradora iniciada. Canal IPC: 0x%x\n", IPC_BASE_ADDR);
+  printf("[VM1] Orchestrator Task started. IPC channel: 0x%x\n", IPC_BASE_ADDR);
   fflush(stdout);
 
   while (1) {
@@ -151,7 +151,7 @@ void task_orchestrator(void *arg) {
     g_label_atual = (float)current_bench;
     ipc->current_label = current_bench;
     asm volatile("dsb sy" ::: "memory");
-    printf("[VM1] Rodando benchmark %d por 10 minutos...\n", current_bench);
+    printf("[VM1] Running benchmark %d for 10 minutes...\n", current_bench);
     fflush(stdout);
 
     while (xTaskGetTickCount() < end_time) {

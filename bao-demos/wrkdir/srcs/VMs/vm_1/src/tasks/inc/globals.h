@@ -10,7 +10,7 @@
 #define OTHER_TASK_PRIORITY 1
 #define TASK_STACK_SIZE 4096
 
-// IPC shared memory (Canal 1: VM0 <-> VM1)
+// IPC shared memory (Channel 1: VM0 <-> VM1)
 #define IPC_BASE_ADDR 0x70000000
 
 typedef struct {
@@ -31,18 +31,18 @@ typedef struct {
 
 #define NUM_BENCHMARKS   7
 
-// PRNG simples (Linear Congruential Generator) para selecao aleatoria de benchmarks
-// Usa o timer do hardware como seed inicial (sem dependencia de stdlib)
+// Simple PRNG (Linear Congruential Generator) for random benchmark selection
+// Uses the hardware timer as initial seed (no stdlib dependency)
 static uint32_t _prng_state = 0;
 
 static inline void prng_seed_from_timer(void) {
     uint64_t val;
     asm volatile("isb \n mrs %0, cntvct_el0" : "=r" (val));
     _prng_state = (uint32_t)(val ^ (val >> 32));
-    if (_prng_state == 0) _prng_state = 1;  // evitar estado zero
+    if (_prng_state == 0) _prng_state = 1;  // avoid zero state
 }
 
-// Retorna valor aleatorio entre min e max (inclusive)
+// Returns random value between min and max (inclusive)
 static inline uint32_t prng_range(uint32_t min, uint32_t max) {
     _prng_state = _prng_state * 1664525u + 1013904223u; // LCG (Numerical Recipes)
     return min + (_prng_state % (max - min + 1));

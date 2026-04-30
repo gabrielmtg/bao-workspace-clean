@@ -9,7 +9,7 @@
 #define IPC_BASE_ADDR 0x70000000
 #define IPC_SIZE      0x10000
 
-// Layout da IPC_Channel:
+// IPC_Channel layout:
 // offset 0 (0 bytes): signal_ready
 // offset 1 (4 bytes): resume
 // offset 2 (8 bytes): current_label
@@ -37,18 +37,18 @@ int main(int argc, char *argv[]) {
 
     volatile uint32_t *ptr = (volatile uint32_t *)map;
 
-    // 1. Enviar o label
+    // 1. Send the label
     ptr[2] = label;
 
-    // 2. Avisar a VM0 que estamos "pausados" e prontos
+    // 2. Notify VM0 that we are "paused" and ready
     ptr[0] = 1;
 
-    // 3. Fazer polling do sinal de resume da VM0
+    // 3. Poll the resume signal from VM0
     while (ptr[1] == 0) {
-        usleep(10000); // Espera 10ms (alivia CPU)
+        usleep(10000); // Wait 10ms (reduces CPU load)
     }
 
-    // 4. Recebido o resume: consumir o sinal (limpar a flag para o próximo ciclo)
+    // 4. Resume received: consume the signal (clear the flag for the next cycle)
     ptr[1] = 0;
 
     munmap(map, IPC_SIZE);

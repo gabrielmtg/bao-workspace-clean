@@ -8,7 +8,7 @@
 
 #include <bao.h>
 
-// definicoes para o timer.c
+// definitions for timer.c
 
 #define GENERIC_TIMER_ENABLE    (0x1)   //bit 0
 #define GENERIC_TIMER_IMASK     (0x2)   //bit 1
@@ -18,7 +18,7 @@
 
 #define PMU_MAX_CPUS 4
 
-// varieaveis globais para armazenar os dados coletados da PMU, para serem enviados para a VM
+// global variables to store collected PMU data, to be sent to the VM
 typedef struct {
     uint64_t timestamp;
     uint64_t cpu_cycles;
@@ -27,10 +27,10 @@ typedef struct {
     uint64_t cache_misses;
     uint64_t l2_cache_access;
     uint64_t det_status;          // 0=WARMUP, 1=BENIGN, 2=ATTACK
-    uint64_t det_probability_pct; // probabilidade * 100 (inteiro)
+    uint64_t det_probability_pct; // probability * 100 (integer)
 } pmu_data_t;
 
-//array global para armazenar os dados da PMU de cada CPU
+// global array to store PMU data from each CPU
 extern volatile pmu_data_t g_pmu_data[PMU_MAX_CPUS];
 
 void timer_arch_init(void);
