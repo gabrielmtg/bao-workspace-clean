@@ -7,9 +7,6 @@
 #include "../inc/globals.h"
 
 #include "pmu_monitor.h"
-#include "neural_network.h"
-
-
 
 
 //==============================================================================
@@ -48,25 +45,3 @@ void task_monitor(void *arg) {
     }
 }
 
-//==============================================================================
-//fann
-//==============================================================================
-
-void task_fann(void *arg) {
-    struct fann *ann = init_fann_model();
-    int iteracao = 0;
-    
-    vTaskDelay(pdMS_TO_TICKS(500));
-    const TickType_t xPeriod = pdMS_TO_TICKS(500);
-    TickType_t xLastWakeTime = xTaskGetTickCount();
-    
-    while(1) {
-        vTaskDelayUntil(&xLastWakeTime, xPeriod);
-      
-        int amostras = uxQueueMessagesWaiting(xPmuQueue);
-      
-        if (amostras > 0) {
-            process_fann_batch(ann, amostras, &iteracao);
-        }
-    }
-}

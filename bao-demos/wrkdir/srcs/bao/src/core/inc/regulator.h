@@ -10,7 +10,6 @@
 #include <vm.h>
 #include <pmu.h>
 
-#include "../../../../guest_common/inc/benchmarks.h"
 
 #define NO 0
 #define YES 1

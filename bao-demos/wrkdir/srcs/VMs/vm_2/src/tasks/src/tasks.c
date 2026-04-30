@@ -6,7 +6,6 @@
 #include "../inc/globals.h"
 
 #include "benchmarks_wrappers.h"
-#include "neural_network.h"
 #include "regulation.h"
 
 // Context for bandwidth benchmark
